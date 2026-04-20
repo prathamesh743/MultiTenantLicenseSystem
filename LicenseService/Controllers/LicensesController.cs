@@ -2,6 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Models;
+using LicenseService.Commands;
+using LicenseService.Queries;
+
 
 [ApiController]
 [Route("api/[controller]")]

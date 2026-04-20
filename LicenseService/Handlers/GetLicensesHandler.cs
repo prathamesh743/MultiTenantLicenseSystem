@@ -2,6 +2,10 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Data;
 using SharedKernel.Models;
+using LicenseService.Queries;
+
+namespace LicenseService.Handlers;
+
 public class GetLicensesHandler : IRequestHandler<GetLicensesQuery, List<License>>
 {
     private readonly LicenseDbContext _context;

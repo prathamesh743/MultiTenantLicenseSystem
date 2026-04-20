@@ -2,6 +2,10 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Data;
 using SharedKernel.Models;
+using LicenseService.Commands;
+
+
+namespace LicenseService.Handlers;
 
 public class UpdateLicenseStatusHandler : IRequestHandler<UpdateLicenseStatusCommand, bool>
 {

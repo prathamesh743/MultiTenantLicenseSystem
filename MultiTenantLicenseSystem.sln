@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGateway", "ApiGateway\Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LicenseFrontend", "LicenseFrontend\LicenseFrontend.csproj", "{D22A30B8-BED8-44F1-AF60-F62B0F697E14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LicenseSystem.Tests", "LicenseSystem.Tests\LicenseSystem.Tests.csproj", "{E9F5006C-C8EE-48D5-B084-8DC0228E53A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +56,9 @@ Global
 		{D22A30B8-BED8-44F1-AF60-F62B0F697E14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D22A30B8-BED8-44F1-AF60-F62B0F697E14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D22A30B8-BED8-44F1-AF60-F62B0F697E14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9F5006C-C8EE-48D5-B084-8DC0228E53A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9F5006C-C8EE-48D5-B084-8DC0228E53A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9F5006C-C8EE-48D5-B084-8DC0228E53A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9F5006C-C8EE-48D5-B084-8DC0228E53A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

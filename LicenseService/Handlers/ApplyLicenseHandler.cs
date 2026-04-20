@@ -1,10 +1,14 @@
 using MediatR;
 using SharedKernel.Data;
 using SharedKernel.Models;
+using LicenseService.Commands;
+
 /// <summary>
 /// Command Handler for creating a new license application.
 /// Implements the Command side of the CQRS pattern.
 /// </summary>
+namespace LicenseService.Handlers;
+
 public class ApplyLicenseHandler : IRequestHandler<ApplyLicenseCommand, License>
 {
     private readonly LicenseDbContext _context;
