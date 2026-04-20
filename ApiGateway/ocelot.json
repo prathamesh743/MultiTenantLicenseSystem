@@ -1,0 +1,56 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/Auth/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5001 } ],
+      "UpstreamPathTemplate": "/license/api/Auth/login",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [] }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Auth/register",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5001 } ],
+      "UpstreamPathTemplate": "/license/api/Auth/register",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [] }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Licenses",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5001 } ],
+      "UpstreamPathTemplate": "/license/api/Licenses",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5001 } ],
+      "UpstreamPathTemplate": "/license/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5002 } ],
+      "UpstreamPathTemplate": "/document/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5003 } ],
+      "UpstreamPathTemplate": "/notification/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
+      "UpstreamPathTemplate": "/payment/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5000"
+  }
+}

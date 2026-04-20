@@ -1,0 +1,133 @@
+@model List<LicenseFrontend.Models.LicenseViewModel>
+@{
+    ViewData["Title"] = "My Dashboard";
+}
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold mb-0">Professional Dashboard</h2>
+                <p class="text-muted">Welcome, <span class="text-primary fw-semibold">@User.Identity?.Name</span> | State: @User.FindFirst("TenantId")?.Value</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Active & Pending Licenses</span>
+                <span class="badge bg-primary">Total: @(Model?.Count ?? 0)</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>License #</th>
+                                <th>Agency</th>
+                                <th>Issue Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">
+                                            @item.LicenseNumber
+                                        </td>
+                                        <td>@item.Agency</td>
+                                        <td class="text-muted">@item.IssueDate.ToShortDateString()</td>
+                                        <td><span class="badge status-@item.Status">@item.Status</span>
+                                            @if (item.DocumentId.HasValue)
+                                            {
+                                                <div class="mt-1">
+                                                    <a asp-controller="Licenses" asp-action="DownloadDocument" asp-route-id="@item.DocumentId.Value" class="text-decoration-none small fw-normal" title="Download @item.DocumentFileName">
+                                                        📂 @(item.DocumentFileName ?? "Download File")
+                                                    </a>
+                                                </div>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <p class="text-muted mb-0">No professional licenses found on your profile.</p>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                New Application
+            </div>
+            <div class="card-body">
+                <form asp-action="Apply" method="post" asp-controller="Licenses" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Applicant Name</label>
+                        <input name="ApplicantName" class="form-control" value="@User.Identity?.Name" readonly />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Target Regulatory Agency</label>
+                        <select name="Agency" class="form-select form-select-lg" required>
+                            <option value="">-- Select Agency --</option>
+                            <option value="Medical Licensing Board">Medical Licensing Board</option>
+                            <option value="Board of Nursing">Board of Nursing</option>
+                            <option value="Professional Engineering Council">Professional Engineering Council</option>
+                            <option value="State Bar Association">State Bar Association</option>
+                            <option value="Real Estate Commission">Real Estate Commission</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Upload Credentials (PDF/Doc)</label>
+                        <input type="file" name="document" class="form-control" required />
+                        <small class="text-muted">A mandatory background check will be performed.</small>
+                    </div>
+                    <div class="alert alert-info py-2 small mb-4">
+                         💵 <strong>State Processing Fee: $150.00</strong>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Pay & Submit Application</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4 border-0 bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">Dashboard Notice</h6>
+                <small class="text-muted">Once submitted, applications are reviewed by state officials. You will receive an automated notification upon status change.</small>
+            </div>
+        </div>
+    </div>
+</div>

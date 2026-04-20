@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Welcome";
+}
+
+<div class="row align-items-center py-5">
+    <div class="col-lg-6">
+        <h1 class="display-3 fw-bold text-primary mb-4">Modern Licensing for Modern States.</h1>
+        <p class="lead text-muted mb-5">
+            A unified, multi-tenant platform for professionals to apply, renew, and manage government licenses with ease. Built with microservices architecture for maximum reliability and state-level isolation.
+        </p>
+        <div class="d-grid gap-3 d-sm-flex">
+            @if (!Context.Request.Cookies.ContainsKey("jwt"))
+            {
+                <a asp-controller="Auth" asp-action="Login" class="btn btn-primary btn-lg px-5">Get Started</a>
+                <a asp-controller="Auth" asp-action="Register" class="btn btn-outline-secondary btn-lg px-5">Register</a>
+            }
+            else
+            {
+                @if (User.IsInRole("Applicant"))
+                {
+                    <a asp-controller="Dashboard" asp-action="Applicant" class="btn btn-primary btn-lg px-5">Go to My Dashboard</a>
+                }
+                else
+                {
+                    <a asp-controller="Dashboard" asp-action="Agency" class="btn btn-primary btn-lg px-5">Go to State Console</a>
+                }
+            }
+        </div>
+    </div>
+    <div class="col-lg-6 d-none d-lg-block">
+        <div class="card bg-primary text-white p-5 border-0 shadow-lg" style="border-radius: 30px;">
+            <div class="card-body">
+                <h3 class="fw-bold mb-4">State Benefits</h3>
+                <ul class="list-unstyled">
+                    <li class="mb-3">✅ <strong class="ms-2">Multi-Tenancy:</strong> Secure data isolation per state.</li>
+                    <li class="mb-3">✅ <strong class="ms-2">Role-Based:</strong> Dashboards for Professionals & Officials.</li>
+                    <li class="mb-3">✅ <strong class="ms-2">Microservices:</strong> Modular scaling for high traffic.</li>
+                    <li class="mb-3">✅ <strong class="ms-2">Audit Ready:</strong> Full tracking of all license statuses.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5 pt-5 text-center">
+    <div class="col-md-4">
+        <div class="p-3">
+            <h4 class="fw-bold">Fast Approval</h4>
+            <p class="text-muted">Streamlined workflows allow state agencies to review and approve licenses in record time.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3">
+            <h4 class="fw-bold">Secure ID</h4>
+            <p class="text-muted">Enterprise-grade JWT authentication ensures professional data stays protected.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3">
+            <h4 class="fw-bold">State Isolation</h4>
+            <p class="text-muted">Each state operates on its own secure tenant, preventing any cross-state data leakage.</p>
+        </div>
+    </div>
+</div>

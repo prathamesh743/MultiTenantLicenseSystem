@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-primary">Welcome Back</h2>
+                        <p class="text-muted">Sign in to your state license account</p>
+                    </div>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                    }
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger">@ViewBag.Error</div>
+                    }
+
+                    <form asp-controller="Auth" asp-action="Login" method="post">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Username</label>
+                            <input type="text" name="username" class="form-control form-control-lg" placeholder="Enter your username" required />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Password</label>
+                            <input type="password" name="password" class="form-control form-control-lg" placeholder="Enter your password" required />
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Tenant ID (State)</label>
+                            <input type="text" name="tenantId" class="form-control form-control-lg" value="tenant1" required />
+                            <small class="text-muted">Example: tenant1 for Florida, tenant2 for Texas</small>
+                        </div>
+                        <div class="d-grid gap-2 mb-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
+                        </div>
+                        <div class="text-center">
+                            <p class="mb-0">New user? <a asp-controller="Auth" asp-action="Register" class="text-primary fw-bold text-decoration-none">Create a state account</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
