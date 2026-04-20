@@ -72,6 +72,35 @@ To allow containers to communicate within the Docker network, you must update th
 
 ---
 
+## Usage Guide
+
+The system supports three primary roles: **Applicant**, **Agency (State)**, and **Admin**. 
+
+### 1. User Registration
+- Navigate to the **Register** page.
+- Choose a **Tenant ID** (e.g., `agency1`). Users within the same Tenant ID share the same database isolation.
+- Select your **Role**:
+    - `Applicant`: For individuals applying for licenses.
+    - `Agency`: For government officials reviewing applications.
+
+### 2. License Application Workflow (Applicant)
+1. **Login** as an Applicant using your credentials and Tenant ID.
+2. From the **Dashboard**, click **Apply for New License**.
+3. Fill in the **Applicant Name**, **Target Agency** (e.g., "Health Department"), and upload a supporting document (e.g., a PDF of your ID).
+4. Click **Submit Application**.
+5. The system will process the document upload, create the license record, process a mock payment, and send you a notification.
+6. Your application will appear in your dashboard with the status `Pending`.
+
+### 3. Review & Approval Workflow (Agency)
+1. **Login** as an Agency user using the **same Tenant ID** as the applicant.
+2. Your **Agency Dashboard** will display all applications submitted within your tenant.
+3. Locate the `Pending` application.
+4. (Optional) Click **Download** to review the uploaded document.
+5. Click **Approve** or **Reject**.
+6. The license status will update instantly, and a notification will be sent to the Applicant's dashboard.
+
+---
+
 ## Future AWS Deployment
 The project is container-ready and can be deployed to **AWS ECS (Fargate)** or **EKS**.
 - **Database**: Use **AWS RDS SQL Server Express** (Free Tier).
