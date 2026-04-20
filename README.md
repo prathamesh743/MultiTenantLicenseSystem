@@ -16,6 +16,7 @@ This project demonstrates a scalable microservices architecture for license mana
 | **Background Jobs** | **Hangfire** integration in `LicenseService` for automated license renewal processing. |
 | **API Gateway** | **Ocelot** gateway (`ApiGateway` project) acts as the single entry point, routing requests to downstream services. |
 | **Dockerization** | All services are fully containerized with production-ready multi-stage Dockerfiles. |
+| **Unit Testing** | xUnit tests for core CQRS handlers in `LicenseSystem.Tests`. |
 
 ## Project Structure
 - `ApiGateway`: Ocelot-based entry point for all API requests.
@@ -25,6 +26,7 @@ This project demonstrates a scalable microservices architecture for license mana
 - `NotificationService`: Handles user notifications and alerts.
 - `PaymentService`: Mock service for license fee processing.
 - `SharedKernel`: Shared models, DTOs, and common logic.
+- `LicenseSystem.Tests`: Unit tests for key business logic using xUnit and Moq.
 
 ## Design Rationale
 - **Microservices**: Decoupled services allow independent scaling and technology choices for different business domains.
