@@ -22,6 +22,12 @@ public class UpdateLicenseStatusHandler : IRequestHandler<UpdateLicenseStatusCom
 
         if (license == null) return false;
 
+        if (request.RequesterRole == "Agency")
+        {
+            if (string.IsNullOrWhiteSpace(request.RequesterAgency)) return false;
+            if (!string.Equals(license.Agency, request.RequesterAgency, StringComparison.Ordinal)) return false;
+        }
+
         // Business Logic: Once approved or rejected, status cannot be changed
         if (license.Status != "Pending") return false;
 

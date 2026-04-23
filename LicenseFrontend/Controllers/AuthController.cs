@@ -1,16 +1,20 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace LicenseFrontend.Controllers;
 
 public class AuthController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly string _gatewayBaseUrl;
 
-    public AuthController(IHttpClientFactory httpClientFactory)
+    public AuthController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _httpClient = httpClientFactory.CreateClient();
+        _gatewayBaseUrl = (configuration["GatewayUrl"] ?? "http://localhost:5000").TrimEnd('/');
     }
 
     [HttpGet]
@@ -20,12 +24,13 @@ public class AuthController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string username, string password, string tenantId)
     {
         var requestBody = new { Username = username, Password = password, TenantId = tenantId };
         var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("http://localhost:5000/license/api/Auth/login", content);
+        var response = await _httpClient.PostAsync($"{_gatewayBaseUrl}/license/api/Auth/login", content);
 
         if (response.IsSuccessStatusCode)
         {
@@ -39,7 +44,7 @@ public class AuthController : Controller
                 Response.Cookies.Append("jwt", token, new CookieOptions
                 {
                     HttpOnly = true, // Enhanced security: prevents client-side script access to the token.
-                    Secure = false,  // Set to true in production with HTTPS.
+                    Secure = !HttpContext.RequestServices.GetRequiredService<IHostEnvironment>().IsDevelopment(),
                     SameSite = SameSiteMode.Lax,
                     Expires = DateTimeOffset.UtcNow.AddHours(2)
                 });
@@ -62,12 +67,13 @@ public class AuthController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Register(string username, string password, string role, string tenantId)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(string username, string password, string tenantId)
     {
-        var requestBody = new { Username = username, Password = password, Role = role, TenantId = tenantId };
+        var requestBody = new { Username = username, Password = password, TenantId = tenantId };
         var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("http://localhost:5000/license/api/Auth/register", content);
+        var response = await _httpClient.PostAsync($"{_gatewayBaseUrl}/license/api/Auth/register", content);
 
         if (response.IsSuccessStatusCode)
         {

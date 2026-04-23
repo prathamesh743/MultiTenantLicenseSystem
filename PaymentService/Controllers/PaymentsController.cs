@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SharedKernel.Data;
 using SharedKernel.Models;
 using System.Security.Claims;
@@ -23,6 +24,12 @@ public class PaymentsController : ControllerBase
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        if (request.Amount <= 0) return BadRequest("Amount must be positive.");
+
+        var license = await _context.Licenses.FirstOrDefaultAsync(l => l.Id == request.LicenseId);
+        if (license == null) return NotFound("License not found.");
+        if (license.UserId != userId) return Forbid();
 
         // MOCK PAYMENT LOGIC
         var payment = new PaymentRecord

@@ -3,50 +3,63 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Data;
 using SharedKernel.Models;
+using SharedKernel.Security;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly LicenseDbContext _context;
+    private readonly JwtOptions _jwt;
 
-    public AuthController(LicenseDbContext context)
+    public AuthController(LicenseDbContext context, IOptions<JwtOptions> jwtOptions)
     {
         _context = context;
+        _jwt = jwtOptions.Value;
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.TenantId))
+            return BadRequest("Username, password, and tenantId are required.");
+
         if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == request.Username && u.TenantId == request.TenantId))
             return BadRequest("Username already exists for this tenant.");
 
         var user = new User
         {
             Username = request.Username,
-            // In a real application, hash the password (e.g., BCrypt). Keeping it plain for simplicity in Phase 1 if needed, but let's do a simple base64 or keep it plain.
-            PasswordHash = request.Password, 
-            Role = request.Role,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = "Applicant",
             TenantId = request.TenantId,
-            Agency = request.Agency
+            Agency = null
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Registration successful." });
+        return Ok(new { message = "Registration successful.", role = user.Role });
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.TenantId))
+            return BadRequest("Username, password, and tenantId are required.");
+
         var user = await _context.Users.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Username == request.Username && u.PasswordHash == request.Password && u.TenantId == request.TenantId);
+            .FirstOrDefaultAsync(u => u.Username == request.Username && u.TenantId == request.TenantId);
 
         if (user == null)
+            return Unauthorized("Invalid credentials.");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized("Invalid credentials.");
 
         var claims = new List<Claim>
@@ -62,12 +75,12 @@ public class AuthController : ControllerBase
             claims.Add(new Claim("Agency", user.Agency));
         }
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForAssignment2026_ThisIsLongEnoughForHS256_2026"));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: "LicenseSystem",
-            audience: "LicenseSystem",
+            issuer: _jwt.Issuer,
+            audience: _jwt.Audience,
             claims: claims,
             expires: DateTime.Now.AddHours(2),
             signingCredentials: creds);
@@ -78,6 +91,40 @@ public class AuthController : ControllerBase
             role = user.Role,
             tenantId = user.TenantId
         });
+    }
+
+    public record CreateUserRequest(string Username, string Password, string TenantId, string Role, string? Agency);
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("users")]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.TenantId))
+            return BadRequest("Username, password, and tenantId are required.");
+
+        var role = request.Role?.Trim();
+        if (role is not ("Applicant" or "Agency" or "Admin"))
+            return BadRequest("Role must be Applicant, Agency, or Admin.");
+
+        if (role == "Agency" && string.IsNullOrWhiteSpace(request.Agency))
+            return BadRequest("Agency is required for Agency role.");
+
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == request.Username && u.TenantId == request.TenantId))
+            return BadRequest("Username already exists for this tenant.");
+
+        var user = new User
+        {
+            Username = request.Username,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = role,
+            TenantId = request.TenantId,
+            Agency = role == "Agency" ? request.Agency : null
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { id = user.Id, role = user.Role, tenantId = user.TenantId });
     }
 }
 
@@ -90,6 +137,5 @@ public class LoginRequest
 
 public class RegisterRequest : LoginRequest
 {
-    public string Role { get; set; } = "Applicant";
-    public string? Agency { get; set; }
+    // Role/Agency selection is handled by admins only via /api/Auth/users.
 }

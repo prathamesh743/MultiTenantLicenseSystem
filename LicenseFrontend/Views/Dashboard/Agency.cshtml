@@ -83,11 +83,13 @@
                                     {
                                         <div class="btn-group">
                                             <form asp-controller="Licenses" asp-action="UpdateStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@item.Id" />
                                                 <input type="hidden" name="status" value="Approved" />
                                                 <button type="submit" class="btn btn-sm btn-success me-2 px-3">Approve</button>
                                             </form>
                                             <form asp-controller="Licenses" asp-action="UpdateStatus" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
                                                 <input type="hidden" name="id" value="@item.Id" />
                                                 <input type="hidden" name="status" value="Rejected" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger px-3">Reject</button>

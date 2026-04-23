@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   license-service:
     build:
@@ -8,8 +6,19 @@ services:
     ports:
       - "5001:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicenseDb;User Id=sa;Password=Your_Password123;TrustServerCertificate=True
+      - ConnectionStrings__HangfireConnection=Server=sqlserver;Database=LicenseDb;User Id=sa;Password=Your_Password123;TrustServerCertificate=True
+      - Database__AutoMigrate=true
+      - Jwt__Issuer=LicenseSystem
+      - Jwt__Audience=LicenseSystem
+      - Jwt__Key=DockerDevKey_ReplaceMe_ThisMustBeLongEnough_For_HS256_2026
+      - Seed__AdminUsername=admin
+      - Seed__AdminPassword=Admin123!
+      - Seed__AdminTenantId=tenant1
+    depends_on:
+      - sqlserver
 
   document-service:
     build:
@@ -18,7 +27,17 @@ services:
     ports:
       - "5002:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicenseDb;User Id=sa;Password=Your_Password123;TrustServerCertificate=True
+      - Database__AutoMigrate=true
+      - Jwt__Issuer=LicenseSystem
+      - Jwt__Audience=LicenseSystem
+      - Jwt__Key=DockerDevKey_ReplaceMe_ThisMustBeLongEnough_For_HS256_2026
+    volumes:
+      - document_uploads:/app/Uploads
+    depends_on:
+      - sqlserver
 
   notification-service:
     build:
@@ -27,7 +46,15 @@ services:
     ports:
       - "5003:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicenseDb;User Id=sa;Password=Your_Password123;TrustServerCertificate=True
+      - Database__AutoMigrate=true
+      - Jwt__Issuer=LicenseSystem
+      - Jwt__Audience=LicenseSystem
+      - Jwt__Key=DockerDevKey_ReplaceMe_ThisMustBeLongEnough_For_HS256_2026
+    depends_on:
+      - sqlserver
 
   payment-service:
     build:
@@ -36,7 +63,15 @@ services:
     ports:
       - "5004:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=LicenseDb;User Id=sa;Password=Your_Password123;TrustServerCertificate=True
+      - Database__AutoMigrate=true
+      - Jwt__Issuer=LicenseSystem
+      - Jwt__Audience=LicenseSystem
+      - Jwt__Key=DockerDevKey_ReplaceMe_ThisMustBeLongEnough_For_HS256_2026
+    depends_on:
+      - sqlserver
 
   api-gateway:
     build:
@@ -45,7 +80,17 @@ services:
     ports:
       - "5000:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80
+      - Jwt__Issuer=LicenseSystem
+      - Jwt__Audience=LicenseSystem
+      - Jwt__Key=DockerDevKey_ReplaceMe_ThisMustBeLongEnough_For_HS256_2026
+      - Ocelot__ConfigFile=ocelot.docker.json
+    depends_on:
+      - license-service
+      - document-service
+      - notification-service
+      - payment-service
 
   frontend:
     build:
@@ -54,7 +99,14 @@ services:
     ports:
       - "5005:80"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:80
+      - GatewayUrl=http://api-gateway
+      - Jwt__Issuer=LicenseSystem
+      - Jwt__Audience=LicenseSystem
+      - Jwt__Key=DockerDevKey_ReplaceMe_ThisMustBeLongEnough_For_HS256_2026
+    depends_on:
+      - api-gateway
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -63,3 +115,9 @@ services:
       - MSSQL_SA_PASSWORD=Your_Password123
     ports:
       - "1433:1433"
+    volumes:
+      - sqlserverdata:/var/opt/mssql
+
+volumes:
+  sqlserverdata:
+  document_uploads:

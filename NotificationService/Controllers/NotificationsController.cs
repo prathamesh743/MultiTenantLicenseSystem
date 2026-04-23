@@ -25,9 +25,7 @@ public class NotificationsController : ControllerBase
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdStr, out var userId)) return Unauthorized();
 
-        // Use IgnoreQueryFilters to bypass TenantId global filter - we scope by UserId instead
         var notifications = await _context.Notifications
-            .IgnoreQueryFilters()
             .Where(n => n.UserId == userId)
             .OrderByDescending(n => n.CreatedAt)
             .Take(20)
@@ -41,10 +39,21 @@ public class NotificationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateNotification([FromBody] CreateNotificationDto dto)
     {
+        if (string.IsNullOrWhiteSpace(dto.Message)) return BadRequest("Message is required.");
+
+        var callerUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(callerUserIdStr, out var callerUserId)) return Unauthorized();
+
+        var isApplicant = User.IsInRole("Applicant");
+        var targetUserId = isApplicant ? callerUserId : dto.UserId;
+
+        if (!await _context.Users.AnyAsync(u => u.Id == targetUserId))
+            return NotFound("Target user not found in this tenant.");
+
         var notification = new Notification
         {
-            UserId = dto.UserId,
-            Message = dto.Message,
+            UserId = targetUserId,
+            Message = dto.Message.Trim(),
             CreatedAt = DateTime.UtcNow,
             IsRead = false,
             TenantId = _context.TenantId

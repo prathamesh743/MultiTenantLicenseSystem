@@ -18,6 +18,7 @@
                     }
 
                     <form asp-controller="Auth" asp-action="Register" method="post">
+                        @Html.AntiForgeryToken()
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Username</label>
@@ -27,28 +28,6 @@
                                 <label class="form-label fw-semibold">Password</label>
                                 <input type="password" name="password" class="form-control" required />
                             </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Access Level (Role)</label>
-                            <select name="role" id="roleSelect" class="form-select form-select-lg" onchange="toggleAgency()" required>
-                                <option value="Applicant">Applicant (Individual Professional)</option>
-                                <option value="Agency">Agency (Department Admin)</option>
-                                <option value="Admin">Admin (State Super User)</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4" id="agencyDiv" style="display:none;">
-                            <label class="form-label fw-semibold text-primary">Assigned Regulatory Board</label>
-                            <select name="agency" class="form-select form-select-lg">
-                                <option value="">-- Choose Board --</option>
-                                <option value="Medical Licensing Board">Medical Licensing Board</option>
-                                <option value="Board of Nursing">Board of Nursing</option>
-                                <option value="Professional Engineering Council">Professional Engineering Council</option>
-                                <option value="State Bar Association">State Bar Association</option>
-                                <option value="Real Estate Commission">Real Estate Commission</option>
-                            </select>
-                            <small class="text-muted">Agency users only see data for their selected board.</small>
                         </div>
 
                         <div class="mb-4">
@@ -68,10 +47,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    function toggleAgency() {
-        var role = document.getElementById("roleSelect").value;
-        document.getElementById("agencyDiv").style.display = (role === "Agency") ? "block" : "none";
-    }
-</script>

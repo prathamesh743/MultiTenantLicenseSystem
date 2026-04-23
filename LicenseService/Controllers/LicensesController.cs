@@ -37,6 +37,20 @@ public class LicensesController : ControllerBase
     }
 
     [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
-        => Ok(await _mediator.Send(new UpdateLicenseStatusCommand(id, status)));
+    [Authorize(Roles = "Agency,Admin")]
+    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateLicenseStatusRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Status))
+            return BadRequest("Status is required.");
+
+        var status = request.Status.Trim();
+        if (status is not ("Approved" or "Rejected"))
+            return BadRequest("Status must be Approved or Rejected.");
+
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var agency = User.FindFirst("Agency")?.Value;
+        return Ok(await _mediator.Send(new UpdateLicenseStatusCommand(id, status, role, agency)));
+    }
+
+    public sealed record UpdateLicenseStatusRequest(string Status);
 }
