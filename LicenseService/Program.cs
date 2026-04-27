@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SharedKernel.Data;
+using SharedKernel.Security;
+using SharedKernel.Tenancy;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,19 +18,23 @@ builder.Services.AddHttpContextAccessor();
 // This ensures that every query executed by the context is automatically scoped to the current tenant.
 builder.Services.AddDbContext<LicenseDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), 
-        b => b.MigrationsAssembly("LicenseService")));
+        b => b.MigrationsAssembly("SharedKernel")));
+
+builder.Services.AddScoped<ITenantProvider, HttpContextTenantProvider>();
 
 builder.Services.AddScoped<LicenseDbContext>(sp =>
 {
-    var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
-    // Extract TenantId from JWT claims. Default to 'tenant1' for development if not present.
-    var tenantId = httpContext?.User?.FindFirst("TenantId")?.Value ?? "tenant1";
+    // For authenticated requests we require TenantId claim; unauthenticated endpoints must use IgnoreQueryFilters().
+    var tenantProvider = sp.GetRequiredService<ITenantProvider>();
+    var tenantId = tenantProvider.TryGetTenantId() ?? "__unauth__";
 
     var options = sp.GetRequiredService<DbContextOptions<LicenseDbContext>>();
     var ctx = new LicenseDbContext(options);
     ctx.TenantId = tenantId;
     return ctx;
 });
+
+builder.Services.AddSingleton<ILicenseDbContextTenantFactory, LicenseDbContextTenantFactory>();
 
 // ── CQRS & BACKGROUND JOBS ────────────────────────────────────────────────
 // Register MediatR for CQRS (Command Query Responsibility Segregation) pattern.
@@ -38,6 +44,14 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddHangfire(config => config.UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection")));
 builder.Services.AddHangfireServer();
 
+builder.Services.AddScoped<RenewalJob>();
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+if (string.IsNullOrWhiteSpace(jwt.Key))
+{
+    throw new InvalidOperationException("JWT key missing. Set Jwt:Key via configuration or env var Jwt__Key.");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -47,14 +61,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
-            ValidIssuer = "LicenseSystem",
-            ValidAudience = "LicenseSystem",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("SuperSecretKeyForAssignment2026_ThisIsLongEnoughForHS256_2026"))
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key))
         };
     });
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -86,18 +101,40 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-//app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Docker"))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHangfireDashboard("/hangfire");   
+app.UseHangfireDashboard("/hangfire", new Hangfire.DashboardOptions
+{
+    Authorization = new[] { new HangfireDashboardAdminOnlyAuthorizationFilter() }
+});
 
+using (var scope = app.Services.CreateScope())
+{
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var autoMigrate = config.GetValue("Database:AutoMigrate", defaultValue: app.Environment.IsDevelopment());
+    if (autoMigrate)
+    {
+        var db = scope.ServiceProvider.GetRequiredService<LicenseDbContext>();
+        db.Database.Migrate();
+    }
+
+    AdminSeeder.Seed(scope.ServiceProvider, app.Environment);
+}
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-RecurringJob.AddOrUpdate("renewal-job", () => Console.WriteLine("✅ Background renewal job executed for all tenants"), Cron.Daily);
+RecurringJob.AddOrUpdate<RenewalJob>(
+    "renewal-job",
+    job => job.RunAsync(CancellationToken.None),
+    Cron.Daily);
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();

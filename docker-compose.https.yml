@@ -1,0 +1,22 @@
+services:
+  api-gateway:
+    ports:
+      - "5000:80"
+      - "5443:443"
+    environment:
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - Kestrel__Certificates__Default__Path=/https/localhost.pfx
+      - Kestrel__Certificates__Default__Password=changeit
+    volumes:
+      - ./certs:/https:ro
+
+  frontend:
+    ports:
+      - "5005:80"
+      - "5444:443"
+    environment:
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - Kestrel__Certificates__Default__Path=/https/localhost.pfx
+      - Kestrel__Certificates__Default__Password=changeit
+    volumes:
+      - ./certs:/https:ro

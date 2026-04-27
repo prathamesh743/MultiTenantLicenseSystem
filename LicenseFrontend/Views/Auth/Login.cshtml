@@ -22,6 +22,7 @@
                     }
 
                     <form asp-controller="Auth" asp-action="Login" method="post">
+                        @Html.AntiForgeryToken()
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Username</label>
                             <input type="text" name="username" class="form-control form-control-lg" placeholder="Enter your username" required />

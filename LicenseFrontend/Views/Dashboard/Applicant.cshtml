@@ -93,6 +93,7 @@
             </div>
             <div class="card-body">
                 <form asp-action="Apply" method="post" asp-controller="Licenses" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
                     <div class="mb-4">
                         <label class="form-label small fw-bold text-muted text-uppercase">Applicant Name</label>
                         <input name="ApplicantName" class="form-control" value="@User.Identity?.Name" readonly />

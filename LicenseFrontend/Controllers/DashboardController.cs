@@ -2,15 +2,18 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 [Authorize]
 public class DashboardController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly string _gatewayBaseUrl;
 
-    public DashboardController(IHttpClientFactory httpClientFactory)
+    public DashboardController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _httpClient = httpClientFactory.CreateClient();
+        _gatewayBaseUrl = (configuration["GatewayUrl"] ?? "http://localhost:5000").TrimEnd('/');
     }
 
     [Authorize(Roles = "Applicant")]
@@ -20,7 +23,7 @@ public class DashboardController : Controller
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // Fetch licenses for the applicant
-        var response = await _httpClient.GetAsync("http://localhost:5001/api/Licenses");
+        var response = await _httpClient.GetAsync($"{_gatewayBaseUrl}/license/api/Licenses");
         var content = await response.Content.ReadAsStringAsync();
         
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -29,7 +32,7 @@ public class DashboardController : Controller
         // Fetch Notifications
         ViewBag.Notifications = new List<LicenseFrontend.Models.NotificationViewModel>();
         try {
-            var notifyResp = await _httpClient.GetAsync("http://localhost:5003/api/Notifications");
+            var notifyResp = await _httpClient.GetAsync($"{_gatewayBaseUrl}/notification/api/Notifications");
             if (notifyResp.IsSuccessStatusCode)
             {
                 var notifyContent = await notifyResp.Content.ReadAsStringAsync();
@@ -47,7 +50,7 @@ public class DashboardController : Controller
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         
         // Fetch licenses for the agency/admin
-        var response = await _httpClient.GetAsync("http://localhost:5001/api/Licenses");
+        var response = await _httpClient.GetAsync($"{_gatewayBaseUrl}/license/api/Licenses");
         var content = await response.Content.ReadAsStringAsync();
         
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -56,7 +59,7 @@ public class DashboardController : Controller
         // Fetch Notifications
         ViewBag.Notifications = new List<LicenseFrontend.Models.NotificationViewModel>();
         try {
-            var notifyResp = await _httpClient.GetAsync("http://localhost:5003/api/Notifications");
+            var notifyResp = await _httpClient.GetAsync($"{_gatewayBaseUrl}/notification/api/Notifications");
             if (notifyResp.IsSuccessStatusCode)
             {
                 var notifyContent = await notifyResp.Content.ReadAsStringAsync();

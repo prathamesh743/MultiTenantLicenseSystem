@@ -1,0 +1,57 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/Auth/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "license-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/license/api/Auth/login",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [] }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Auth/register",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "license-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/license/api/Auth/register",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [] }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Licenses",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "license-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/license/api/Licenses",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "license-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/license/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "document-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/document/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "notification-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/notification/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    },
+    {
+      "DownstreamPathTemplate": "/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "payment-service", "Port": 80 } ],
+      "UpstreamPathTemplate": "/payment/{catchAll}",
+      "AuthenticationOptions": { "AuthenticationProviderKeys": [ "Jwt" ] }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://api-gateway"
+  }
+}
+

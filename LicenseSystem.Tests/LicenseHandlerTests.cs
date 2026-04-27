@@ -103,7 +103,8 @@ public class LicenseHandlerTests
         // Assert
         Assert.True(result);
         var updatedLicense = await context.Licenses.FindAsync(license.Id);
-        Assert.Equal("Approved", updatedLicense.Status);
+        Assert.NotNull(updatedLicense);
+        Assert.Equal("Approved", updatedLicense!.Status);
         
         // Verify notification was created
         var notification = await context.Notifications.FirstOrDefaultAsync(n => n.UserId == license.UserId);
@@ -111,4 +112,3 @@ public class LicenseHandlerTests
         Assert.Contains("Approved", notification.Message);
     }
 }
-

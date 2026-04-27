@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace LicenseFrontend.Controllers;
 
@@ -10,10 +11,12 @@ namespace LicenseFrontend.Controllers;
 public class LicensesController : Controller
 {
     private readonly IHttpClientFactory _factory;
+    private readonly string _gatewayBaseUrl;
 
-    public LicensesController(IHttpClientFactory httpClientFactory)
+    public LicensesController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _factory = httpClientFactory;
+        _gatewayBaseUrl = (configuration["GatewayUrl"] ?? "http://localhost:5000").TrimEnd('/');
     }
 
     // Creates an authenticated HttpClient using the JWT from cookies
@@ -26,6 +29,7 @@ public class LicensesController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Apply(string applicantName, string agency, IFormFile document)
     {
         var token = Request.Cookies["jwt"];
@@ -45,7 +49,7 @@ public class LicensesController : Controller
             using var form = new MultipartFormDataContent();
             form.Add(new ByteArrayContent(fileBytes), "file", document.FileName);
 
-            var docResp = await docClient.PostAsync("http://localhost:5002/api/Documents/upload", form);
+            var docResp = await docClient.PostAsync($"{_gatewayBaseUrl}/document/api/Documents/upload", form);
             var docBody = await docResp.Content.ReadAsStringAsync();
             steps.Add($"DOC={docResp.StatusCode}");
 
@@ -69,7 +73,7 @@ public class LicensesController : Controller
         var docFileName = document?.FileName; // Capture original filename
         var applyBody = new { ApplicantName = applicantName, Agency = agency, DocumentId = documentId, DocumentFileName = docFileName };
         var applyJson = new StringContent(JsonSerializer.Serialize(applyBody), Encoding.UTF8, "application/json");
-        var licResp = await licClient.PostAsync("http://localhost:5001/api/Licenses", applyJson);
+        var licResp = await licClient.PostAsync($"{_gatewayBaseUrl}/license/api/Licenses", applyJson);
         var licBody = await licResp.Content.ReadAsStringAsync();
         steps.Add($"LIC={licResp.StatusCode}");
 
@@ -87,7 +91,7 @@ public class LicensesController : Controller
         using var payClient = AuthClient();
         var payBody = new { LicenseId = licenseId, Amount = 150.00m };
         var payJson = new StringContent(JsonSerializer.Serialize(payBody), Encoding.UTF8, "application/json");
-        var payResp = await payClient.PostAsync("http://localhost:5004/api/Payments/pay", payJson);
+        var payResp = await payClient.PostAsync($"{_gatewayBaseUrl}/payment/api/Payments/pay", payJson);
         steps.Add($"PAY={payResp.StatusCode}");
 
         // ── Step 4: Notification ─────────────────────────────────────────────
@@ -95,7 +99,7 @@ public class LicensesController : Controller
         using var notifyClient = AuthClient();
         var notifyBody = new { UserId = int.Parse(userIdStr), Message = $"Application {licenseNum} for {agency} submitted & paid." };
         var notifyJson = new StringContent(JsonSerializer.Serialize(notifyBody), Encoding.UTF8, "application/json");
-        var notifyResp = await notifyClient.PostAsync("http://localhost:5003/api/Notifications", notifyJson);
+        var notifyResp = await notifyClient.PostAsync($"{_gatewayBaseUrl}/notification/api/Notifications", notifyJson);
         var notifyBody2 = await notifyResp.Content.ReadAsStringAsync();
         steps.Add($"NOTIFY={notifyResp.StatusCode}");
 
@@ -105,11 +109,12 @@ public class LicensesController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(int id, string status)
     {
         using var client = AuthClient();
-        var content = new StringContent(JsonSerializer.Serialize(status), Encoding.UTF8, "application/json");
-        var response = await client.PutAsync($"http://localhost:5001/api/Licenses/{id}/status", content);
+        var content = new StringContent(JsonSerializer.Serialize(new { Status = status }), Encoding.UTF8, "application/json");
+        var response = await client.PutAsync($"{_gatewayBaseUrl}/license/api/Licenses/{id}/status", content);
 
         if (response.IsSuccessStatusCode)
             TempData["SuccessMessage"] = $"License {status} successfully.";
@@ -126,7 +131,7 @@ public class LicensesController : Controller
     public async Task<IActionResult> DownloadDocument(int id)
     {
         using var client = AuthClient();
-        var response = await client.GetAsync($"http://localhost:5002/api/Documents/{id}");
+        var response = await client.GetAsync($"{_gatewayBaseUrl}/document/api/Documents/{id}");
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsByteArrayAsync();

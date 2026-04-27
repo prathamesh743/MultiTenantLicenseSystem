@@ -24,13 +24,18 @@ public class DocumentsController : ControllerBase
     public async Task<IActionResult> Upload(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
+        if (file.Length > 10 * 1024 * 1024) return BadRequest("File too large (max 10MB).");
 
         var uploadsFolder = Path.Combine(_env.ContentRootPath, "Uploads");
         if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
-        // Save with original filename as requested
-        var fileName = file.FileName;
-        var filePath = Path.Combine(uploadsFolder, fileName);
+        var originalName = Path.GetFileName(file.FileName);
+        var ext = Path.GetExtension(originalName).ToLowerInvariant();
+        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".pdf", ".doc", ".docx" };
+        if (!allowed.Contains(ext)) return BadRequest("Only PDF/DOC/DOCX files are allowed.");
+
+        var storedName = $"{Guid.NewGuid():N}{ext}";
+        var filePath = Path.Combine(uploadsFolder, storedName);
 
         using (var stream = System.IO.File.Create(filePath))
         {
@@ -39,7 +44,7 @@ public class DocumentsController : ControllerBase
 
         var document = new Document
         {
-            FileName = file.FileName,
+            FileName = originalName,
             FilePath = filePath,
             TenantId = _context.TenantId
         };
@@ -53,10 +58,7 @@ public class DocumentsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> Download(int id)
     {
-        // Bypass TenantId global filter - look up by ID directly
-        var document = await _context.Documents
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(d => d.Id == id);
+        var document = await _context.Documents.FirstOrDefaultAsync(d => d.Id == id);
         if (document == null) return NotFound();
 
         if (!System.IO.File.Exists(document.FilePath)) return NotFound("File not found on server.");

@@ -34,6 +34,11 @@ This project demonstrates a scalable microservices architecture for license mana
 - **Multi-Tenancy**: The system uses a shared database with discriminator columns (`TenantId`), ensuring that agencies can only access their own data.
 - **API Gateway**: Provides a unified API surface, handles cross-cutting concerns like authentication, and simplifies frontend communication.
 
+## Production Configuration Notes
+- **Secrets**: Set `Jwt__Key` (and optionally `Jwt__Issuer` / `Jwt__Audience`) via environment variables or your secrets manager. Do not commit real JWT keys to source control.
+- **Admin provisioning**: In production, create Admin/Agency users via `POST /license/api/Auth/users` (Admin only) or seed them through your deployment pipeline.
+- **HTTPS**: Non-development environments enable HTTPS redirection. Run behind a TLS-terminating reverse proxy/load balancer in production.
+
 ## Setup Instructions
 
 ### 1. Local Development (Standard)
@@ -41,7 +46,7 @@ This is the default configuration for running services directly on your machine.
 1. **Database**: Create a SQL Server database named `LicenseDb`.
 2. **Migrations**: Run EF Core migrations:
    ```bash
-   dotnet ef database update --project LicenseService
+   dotnet ef database update --project SharedKernel --startup-project LicenseService
    ```
 3. **Run Services**: Start each microservice and the frontend. Ensure the **ApiGateway** is running on port 5000.
 4. **Access**: Open `http://localhost:5005` in your browser.
@@ -51,17 +56,6 @@ This is the default configuration for running services directly on your machine.
 ### 2. Running with Docker (Containerized)
 The project includes `Dockerfile` files for each service and a `docker-compose.yml`. To run the system in Docker, follow these configuration steps:
 
-#### Required Configuration Changes for Docker:
-To allow containers to communicate within the Docker network, you must update the following files:
-
-1. **ApiGateway/ocelot.json**:
-   - Change `Host: "localhost"` to the service names defined in `docker-compose.yml` (e.g., `"Host": "license-service"`).
-   - Change `Port` values to `80` (the internal container port).
-
-2. **Frontend Controllers**:
-   - Refactor hardcoded `http://localhost:[PORT]` URLs to use a configurable `GatewayUrl`.
-   - In `appsettings.json`, set `GatewayUrl` to `http://api-gateway`.
-
 #### Starting Docker:
 1. Ensure Docker Desktop is running.
 2. Execute:
@@ -69,6 +63,14 @@ To allow containers to communicate within the Docker network, you must update th
    docker-compose up --build
    ```
 3. The system will be available at `http://localhost:5005`.
+
+#### Default Docker Credentials
+The `docker-compose.yml` seeds a dev-only admin user:
+- Username: `admin`
+- Password: `Admin123!`
+- TenantId: `tenant1`
+
+Use that admin account to create `Agency` users via `POST /license/api/Auth/users` through the API Gateway (`http://localhost:5000`).
 
 ---
 
@@ -78,10 +80,8 @@ The system supports three primary roles: **Applicant**, **Agency (State)**, and 
 
 ### 1. User Registration
 - Navigate to the **Register** page.
-- Choose a **Tenant ID** (e.g., `agency1`). Users within the same Tenant ID share the same database isolation.
-- Select your **Role**:
-    - `Applicant`: For individuals applying for licenses.
-    - `Agency`: For government officials reviewing applications.
+- Choose a **Tenant ID** (e.g., `tenant1`). Users within the same Tenant ID share the same database isolation.
+- Public registration creates **Applicant** users only. **Agency/Admin** users must be created by an Admin.
 
 ### 2. License Application Workflow (Applicant)
 1. **Login** as an Applicant using your credentials and Tenant ID.
